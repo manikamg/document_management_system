@@ -56,7 +56,7 @@ const Header = () => {
                         <li className="nav-item">
                             <NavLink
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                                to="/search"
+                                to="/search-document"
                             >
                                 <i className="fas fa-search me-1"></i> Search Documents
                             </NavLink>
