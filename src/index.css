@@ -212,7 +212,7 @@ body {
 
 /* Login Page Styles */
 .login-container {
-  min-height: 100vh;
+  height: calc(100vh - 250px);
   display: flex;
   align-items: center;
   justify-content: center;

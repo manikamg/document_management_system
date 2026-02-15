@@ -99,7 +99,7 @@ const Dashboard = () => {
                 </div>
 
                 <Card title={"Total Documents"} value={srchDocData?.recordsTotal} color={"primary"} icon={<File color={"#000000"} size={"20"} />} link={"/upload-document"}  />
-                <Card title={"Total User"} value={totalUser} color={"primary"} icon={<Users color={"#000000"} size={"20"} />} link={"/search-document"}  />
+                <Card title={"Total User"} value={totalUser} color={"primary"} icon={<Users color={"#000000"} size={"20"} />} link={"/users"}  />
            
             </div>
         </div>

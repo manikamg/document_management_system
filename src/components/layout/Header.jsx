@@ -8,7 +8,7 @@ const Header = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user } = useSelector((state) => state.auth);
-console.log("user" , user)
+
     const handleLogout = () => {
         dispatch(logout());
         navigate('/login');
