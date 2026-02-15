@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { uploadDocument, searchDocument } from '../../features/document/documentThunk'
+import { uploadDocument, searchDocument, fetchPersonalNames, fetchDepartments } from '../../features/document/documentThunk'
 
 // upld = upload doc
 // upld = upload doc
@@ -14,14 +14,22 @@ const initialState = {
     srchSuccess: false,
     srchError: false,
     srchMessage: null,
-    srchDocData: null
+    srchDocData: null,
+
+    tagsLoading: false,
+    tagsSuccess: false,
+    tagsError: false,
+    tagsMessage: null,
+    personalNames: ['John', 'Tom', 'Emily', 'Michael', 'Sarah', 'David', 'Lisa', 'James'],
+    departments: ['Accounts', 'HR', 'IT', 'Finance', 'Marketing', 'Operations', 'Sales', 'Legal'],
+    searchResults: [],
 }
 
 const documentSlice = createSlice({
     name: 'document',
     initialState,
     reducers: {
-        resetUpldState: (state) => {
+        resetUploadState: (state) => {
             state.upldLoading = false,
                 state.upldSuccess = false,
                 state.upldError = false,
@@ -37,20 +45,28 @@ const documentSlice = createSlice({
 
     extraReducers: (builder) => {
         builder
+            // Fetch Personal Names
+            .addCase(fetchPersonalNames.fulfilled, (state, action) => {
+                state.personalNames = action.payload.names || action.payload || state.personalNames;
+            })
+            // Fetch Departments
+            .addCase(fetchDepartments.fulfilled, (state, action) => {
+                state.departments = action.payload.departments || action.payload || state.departments;
+            })
             // Upload document
             .addCase(uploadDocument.pending, (state) => {
                 state.upldLoading = true
             })
             .addCase(uploadDocument.fulfilled, (state, action) => {
-                state.upldLoading = false
-                state.upldSuccess = true
-                state.upldDocData = action.payload.data,
-                    state.upldMessage = null
+                // state.upldLoading = false
+                // state.upldSuccess = true
+                // state.upldDocData = action.payload.data,
+                //     state.upldMessage = null
             })
             .addCase(uploadDocument.rejected, (state, action) => {
-                state.upldLoading = false
-                state.upldError = true
-                state.upldMessage = action.payload
+                // state.upldLoading = false
+                // state.upldError = true
+                // state.upldMessage = action.payload
             })
 
             // Search document
@@ -70,7 +86,7 @@ const documentSlice = createSlice({
                     state.srchSuccess = false
                     state.srchError = true
                     state.srchMessage = null
-                 }
+                }
             })
             .addCase(searchDocument.rejected, (state, action) => {
                 state.srchLoading = false
@@ -80,5 +96,5 @@ const documentSlice = createSlice({
     },
 })
 
-export const { resetUpldState, resetSearchState } = documentSlice.actions
+export const { resetUploadState, resetSearchState } = documentSlice.actions
 export default documentSlice.reducer

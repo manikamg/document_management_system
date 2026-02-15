@@ -12,7 +12,7 @@ const initialState = {
 }
 
 const tagSlice = createSlice({
-    name: 'document',
+    name: 'tag',
     initialState,
     reducers: {
         resetTagState: (state) => {
@@ -21,7 +21,6 @@ const tagSlice = createSlice({
             state.tagError = false,
             state.tagMessage = null
         },
-        
     },
 
     extraReducers: (builder) => {
@@ -31,15 +30,17 @@ const tagSlice = createSlice({
                 state.tagLoading = true
             })
             .addCase(documentTags.fulfilled, (state, action) => {
-                state.tagLoading = false
-                state.tagSuccess = true
-                state.tagData = action.payload.data,
-                state.tagMessage = null
+                console.log(action.payload)
+                // state.tagLoading = false
+                // state.tagSuccess = true
+                // state.tagSuccess = false
+                // state.tagMessage = null
+                // state.tagData = action.payload.data,
             })
             .addCase(documentTags.rejected, (state, action) => {
-                state.tagLoading = false
-                state.tagError = true
-                state.tagMessage = action.payload
+                // state.tagLoading = false
+                // state.tagError = true
+                // state.tagMessage = action.payload
             })
     },
 })

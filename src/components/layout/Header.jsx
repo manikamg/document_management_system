@@ -48,7 +48,7 @@ const Header = () => {
                         <li className="nav-item">
                             <NavLink
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                                to="/upload"
+                                to="/upload-document"
                             >
                                 <i className="fas fa-upload me-1"></i> Upload Document
                             </NavLink>

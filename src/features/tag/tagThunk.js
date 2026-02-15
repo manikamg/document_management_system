@@ -11,7 +11,7 @@ export const documentTags = createAsyncThunk(
                 data: payload
             })
         } catch (error) {
-            return rejectWithValue(err.response?.data?.message || 'Save tags failed')
+            return rejectWithValue(err.response?.data?.message || 'Fetch tags failed')
         }
     }
 )
