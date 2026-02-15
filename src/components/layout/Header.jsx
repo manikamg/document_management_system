@@ -61,6 +61,14 @@ const Header = () => {
                                 <i className="fas fa-search me-1"></i> Search Documents
                             </NavLink>
                         </li>
+                        <li className="nav-item">
+                            <NavLink
+                                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                                to="/users"
+                            >
+                                <i className="fas fa-search me-1"></i> User
+                            </NavLink>
+                        </li>
                     </ul>
 
                     <div className="d-flex align-items-center">

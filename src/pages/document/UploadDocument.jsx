@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Form, Col, Button } from 'react-bootstrap';
+import { Form, Button } from 'react-bootstrap';
+import { CrossCircle, Tag } from '../../components/ui/Icon';
+import { ToastContainer, toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { resetUploadState } from '../../store/slices/documentSlice';
 import { uploadDocument, fetchPersonalNames, fetchDepartments } from "../../features/document/documentThunk"
 import { documentTags } from "../../features/tag/tagThunk"
@@ -9,9 +10,8 @@ import { resetTagState } from '../../store/slices/tagSlice';
 
 const FileUpload = () => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
     const fileInputRef = useRef(null);
-
+    const { user } = useSelector((state) => state.auth)
     const {
         personalNames,
         departments,
@@ -19,6 +19,11 @@ const FileUpload = () => {
         error,
         success,
     } = useSelector((state) => state.document);
+    const {
+        tagSuccess,
+        tagError,
+        tagData
+    } = useSelector((state) => state.tag)
 
     // Local state
     const [validated, setValidated] = useState(false);
@@ -30,17 +35,16 @@ const FileUpload = () => {
     const [tags, setTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
     const [file, setFile] = useState(null)
+    const [selectedDate, setSelectedDate] = useState(null);
     const [uploadForm, setUploadForm] = useState(
         {
-            major_head: "Company",
-            minor_head: "Work Order",
-            document_date: "12-02-2024",
-            document_remarks: "Test Remarks",
-            user_id: "nitin"
+            major_head: "",
+            minor_head: "",
+            document_date: "",
+            document_remarks: "",
+            user_id: user.user_id
         }
     )
-
-
     // Load initial data
     useEffect(() => {
         const docTagData = {
@@ -52,14 +56,18 @@ const FileUpload = () => {
         dispatch(resetUploadState());
     }, [dispatch]);
 
-
+    useEffect(() => {
+        if (tagSuccess) {
+            setTags(tagData)
+        }
+    }, [tagSuccess, tagError])
     // Filter tag suggestions
     useEffect(() => {
         if (newTag) {
             const filtered = tags.filter(
                 (tag) =>
-                    tag.toLowerCase().includes(newTag.toLowerCase()) &&
-                    !selectedTags.includes(tag)
+                    tag.label.toLowerCase().includes(newTag.toLowerCase()) &&
+                    !selectedTags.some(selected => selected.label === tag.label)
             );
             setTagSuggestions(filtered);
             setShowTagDropdown(filtered.length > 0);
@@ -77,15 +85,14 @@ const FileUpload = () => {
     // }, [dispatch]);
 
     // Handle form field changes
-    const handleChange = (e) => {
-        const { name, value } = e.target;
+    const handleChange = ({ target: { name, value } }) => {
         setUploadForm((prev) => ({
             ...prev,
             [name]: value
         }));
 
         // Reset minorHead when majorHead changes
-        if (name === 'majorHead') {
+        if (name === 'major_head') {
             setUploadForm((prev) => ({
                 ...prev,
                 minor_head: ''
@@ -109,15 +116,9 @@ const FileUpload = () => {
         const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
 
         if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-            alert('Only Image and PDF files are allowed!');
+            toast.error('Only Image and PDF files are allowed!');
             return;
         }
-
-        dispatch(setUploadForm({
-            file,
-            fileName: file.name,
-            fileType: file.type,
-        }));
 
         // Create preview for images
         if (file.type.startsWith('image/')) {
@@ -157,17 +158,20 @@ const FileUpload = () => {
     const addTag = (tagName) => {
         if (!tagName.trim()) return; // empty tag ignore
         // check if tag already exists
-        const exists = tags.some(tag => tag.tag_name === tagName.trim());
+        // const exists = tags.some(tag => tag.label === tagName.trim());
+        const exists = selectedTags.some(tag => tag.tag_name === tagName.trim());
         if (exists) return;
 
-        setSelectedTags([...tags, { tag_name: tagName.trim() }]);
+        setSelectedTags([...selectedTags, { tag_name: tagName.trim() }]);
         setNewTag('');
     };
 
     // Remove tag
     const removeTag = (tagName) => {
-        setSelectedTags(tags.filter(tag => tag.tag_name !== tagName));
+        if (!tagName.tag_name.trim()) return;
+        setSelectedTags(selectedTags.filter(tag => tag.tag_name !== tagName.tag_name.trim()));
     };
+
     // Handle new tag input
     const handleNewTagKeyDown = (e) => {
         if (e.key === 'Enter' && newTag.trim()) {
@@ -176,32 +180,9 @@ const FileUpload = () => {
         }
     };
 
-    // Remove selected tag
-    const handleRemoveTag = (tag) => {
-        dispatch(removeTag(tag));
-    };
-
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Validation
-        if (!uploadForm.documentDate) {
-            alert('Please select a document date');
-            return;
-        }
-        if (!uploadForm.majorHead) {
-            alert('Please select a category');
-            return;
-        }
-        if (!uploadForm.minorHead) {
-            alert('Please select a name or department');
-            return;
-        }
-        if (!uploadForm.file) {
-            alert('Please select a file to upload');
-            return;
-        }
 
         const formData = new FormData();
         formData.append('documentDate', uploadForm.document_date);
@@ -215,23 +196,23 @@ const FileUpload = () => {
     };
 
     // Handle success - reset form
-    useEffect(() => {
-        if (success) {
-            setTimeout(() => {
-                dispatch(resetUploadState());
-                setFilePreview(null);
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                }
-            }, 2000);
-        }
-    }, [success, dispatch]);
+    // useEffect(() => {
+    //     if (success) {
+    //         setTimeout(() => {
+    //             dispatch(resetUploadState());
+    //             setFilePreview(null);
+    //             if (fileInputRef.current) {
+    //                 fileInputRef.current.value = '';
+    //             }
+    //         }, 2000);
+    //     }
+    // }, [success, dispatch]);
 
     // Get second dropdown options based on majorHead
     const getMinorHeadOptions = () => {
-        if (uploadForm.majorHead === 'Personal') {
+        if (uploadForm.major_head === 'Personal') {
             return personalNames;
-        } else if (uploadForm.majorHead === 'Professional') {
+        } else if (uploadForm.major_head === 'Professional') {
             return departments;
         }
         return [];
@@ -258,12 +239,13 @@ const FileUpload = () => {
                                     </Form.Label>
                                     <Form.Control
                                         type="date"
-                                        name="documentDate"
-                                        value={uploadForm.documentDate}
+                                        name="document_date"
+                                        value={uploadForm.document_date}
                                         onChange={handleChange}
                                         max={new Date().toISOString().split('T')[0]}
                                         required
                                     />
+
                                     <Form.Control.Feedback type="invalid">
                                         Document Date is required
                                     </Form.Control.Feedback>
@@ -275,8 +257,8 @@ const FileUpload = () => {
                                         <i className="fas fa-folder me-2"></i>Category (Major Head)
                                     </Form.Label>
                                     <Form.Select
-                                        name="majorHead"
-                                        value={uploadForm.majorHead}
+                                        name="major_head"
+                                        value={uploadForm.major_head}
                                         onChange={handleChange}
                                         required
                                     >
@@ -293,22 +275,22 @@ const FileUpload = () => {
                                 <Form.Group className="mb-4" controlId="minorHead">
                                     <Form.Label>
                                         <i className="fas fa-list me-2"></i>
-                                        {uploadForm.majorHead === 'Personal'
+                                        {uploadForm.major_head === 'Personal'
                                             ? 'Name'
-                                            : uploadForm.majorHead === 'Professional'
+                                            : uploadForm.major_head === 'Professional'
                                                 ? 'Department'
                                                 : 'Select Option'}{' '}
                                         (Minor Head)
                                     </Form.Label>
                                     <Form.Select
-                                        name="minorHead"
-                                        value={uploadForm.minorHead}
+                                        name="minor_head"
+                                        value={uploadForm.minor_head}
                                         onChange={handleChange}
-                                        disabled={!uploadForm.majorHead}
+                                        disabled={!uploadForm.major_head}
                                         required
                                     >
                                         <option value="">
-                                            {uploadForm.majorHead ? 'Select' : 'Select Category First'}
+                                            {uploadForm.major_head ? 'Select' : 'Select Category First'}
                                         </option>
                                         {getMinorHeadOptions().map((option) => (
                                             <option key={option} value={option}>
@@ -333,12 +315,10 @@ const FileUpload = () => {
                                             <span className="text-muted">No tags selected</span>
                                         )}
                                         {selectedTags.map((tag) => (
-                                            <span key={tag} className="tag">
-                                                {tag}
-                                                <i
-                                                    className="fas fa-times tag-remove ms-1"
-                                                    onClick={() => handleRemoveTag(tag)}
-                                                ></i>
+                                            <span key={tag.tag_name} className="tag">
+                                                {tag.tag_name}
+                                                <CrossCircle color="red" size="20" onClick={() => removeTag(tag)} />
+
                                             </span>
                                         ))}
                                     </div>
@@ -361,13 +341,13 @@ const FileUpload = () => {
                                                 <div className="list-group shadow">
                                                     {tagSuggestions.map((tag) => (
                                                         <button
-                                                            key={tag}
+                                                            key={tag.label}
                                                             type="button"
                                                             className="list-group-item list-group-item-action"
-                                                            onClick={() => addTag(tag)}
+                                                            onClick={() => addTag(tag.label)}
                                                         >
-                                                            <i className="fas fa-tag me-2"></i>
-                                                            {tag}
+                                                            <Tag />
+                                                            {tag.label}
                                                         </button>
                                                     ))}
                                                 </div>
@@ -467,6 +447,10 @@ const FileUpload = () => {
                     </div>
                 </div>
             </div>
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+            />
         </div>
     );
 };

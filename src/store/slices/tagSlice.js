@@ -17,9 +17,9 @@ const tagSlice = createSlice({
     reducers: {
         resetTagState: (state) => {
             state.tagLoading = false,
-            state.tagSuccess = false,
-            state.tagError = false,
-            state.tagMessage = null
+                state.tagSuccess = false,
+                state.tagError = false,
+                state.tagMessage = null
         },
     },
 
@@ -30,17 +30,19 @@ const tagSlice = createSlice({
                 state.tagLoading = true
             })
             .addCase(documentTags.fulfilled, (state, action) => {
-                console.log(action.payload)
-                // state.tagLoading = false
-                // state.tagSuccess = true
-                // state.tagSuccess = false
-                // state.tagMessage = null
-                // state.tagData = action.payload.data,
+                if (action.payload.status) {
+                    state.tagLoading = false
+                    state.tagSuccess = true
+                    state.tagData = action.payload.data
+                } else {
+                    state.tagLoading = false
+                    state.Error = true
+                }
             })
             .addCase(documentTags.rejected, (state, action) => {
-                // state.tagLoading = false
-                // state.tagError = true
-                // state.tagMessage = action.payload
+                state.tagLoading = false
+                state.tagError = true
+                state.tagMessage = action.payload
             })
     },
 })
