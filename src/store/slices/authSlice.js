@@ -104,6 +104,7 @@ const authSlice = createSlice({
                     state.isAuthenticated = true
                     state.vrfyMessage = "OTP Verification successful. Redirecting to dashboard..."
                     state.vrfyData = data
+                    localStorage.setItem('userData', JSON.stringify(data))
                     localStorage.setItem('accessToken', data.token)
                 }
                 else {
@@ -116,7 +117,6 @@ const authSlice = createSlice({
                 }
             })
             .addCase(verifyLoginOtp.rejected, (state, action) => {
-                console.log("action -----> ", action)
                 state.vrfyLoading = false
                 state.vrfySuccess = false
                 state.vrfyError = true

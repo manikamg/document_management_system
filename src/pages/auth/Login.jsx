@@ -40,11 +40,11 @@ const Login = () => {
             dispatch(resetOtpState())
         }
         if (vrfyError) {
-            toast.error(message)
+            toast.error(vrfyMessage)
             dispatch(resetOtpState())
         }
         if (vrfySuccess) {
-            toast.success(message)
+            toast.success(vrfyMessage)
             dispatch(resetOtpState())
             navigate("/")
         }
