@@ -8,7 +8,7 @@ const Header = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user } = useSelector((state) => state.auth);
-
+console.log("user" , user)
     const handleLogout = () => {
         dispatch(logout());
         navigate('/login');
@@ -39,7 +39,7 @@ const Header = () => {
                         <li className="nav-item">
                             <NavLink
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                                to="/"
+                                to="/dashboard"
                                 end
                             >
                                 <i className="fas fa-home me-1"></i> Dashboard
@@ -66,7 +66,7 @@ const Header = () => {
                     <div className="d-flex align-items-center">
                         <span className="text-white me-3">
                             <i className="fas fa-user-circle me-1"></i>
-                            {user?.name || user?.mobileNumber || 'User'}
+                            {user?.user_name || 'User'}
                         </span>
                         <button
                             className="btn btn-outline-light btn-sm"
