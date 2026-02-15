@@ -20,6 +20,7 @@ const initialState = {
 
     accessToken: localStorage.getItem("accessToken") || null,
     isAuthenticated: !!localStorage.getItem("accessToken"),
+    user: JSON.parse(localStorage.getItem('userData')) || null,
 
     isLogout: false
 }
@@ -104,6 +105,7 @@ const authSlice = createSlice({
                     state.isAuthenticated = true
                     state.vrfyMessage = "OTP Verification successful. Redirecting to dashboard..."
                     state.vrfyData = data
+                    state.user = data
                     localStorage.setItem('userData', JSON.stringify(data))
                     localStorage.setItem('accessToken', data.token)
                 }
@@ -121,7 +123,6 @@ const authSlice = createSlice({
                 state.vrfySuccess = false
                 state.vrfyError = true
                 state.isAuthenticated = false
-                // state.vrfyMessage = action.payload.message
                 localStorage.removeItem('accessToken')
             })
     },

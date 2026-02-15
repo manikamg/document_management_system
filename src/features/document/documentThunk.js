@@ -18,7 +18,7 @@ export const uploadDocument = createAsyncThunk(
 )
 // Upload document thunk
 export const searchDocument = createAsyncThunk(
-    'document/searchDocument',
+    'document/search',
     async (payload, {rejectWithValue}) => {
         try {
             return await apiRequest({
