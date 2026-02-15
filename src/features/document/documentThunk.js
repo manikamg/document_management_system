@@ -12,7 +12,7 @@ export const uploadDocument = createAsyncThunk(
                 data: payload
             })
         } catch (error) {
-            return rejectWithValue(err.response?.data?.message || 'Upload document failed')
+            return rejectWithValue(error.response?.data?.message || 'Upload document failed')
         }
     }
 )
@@ -27,7 +27,7 @@ export const searchDocument = createAsyncThunk(
                 data: payload
             })
         } catch (error) {
-            return rejectWithValue(err.response?.data?.message || 'Search document failed')
+            return rejectWithValue(error.response?.data?.message || 'Search document failed')
         }
     }
 )

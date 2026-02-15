@@ -9,15 +9,26 @@ const api = axios.create({
 // request
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('accessToken')
-    if (token) config.headers.Authorization = `Bearer ${token}`
+    // if (token) config.headers.Authorization = `Bearer ${token}`
+    if (token) {
+        config.headers = config.headers || {};
+        config.headers.token = token;
+    }
     return config
 })
 
 // response
 api.interceptors.response.use((res) => res, (err) => {
+    console.log(err)
     if (err.response?.status === 401) {
-        localStorage.removeItem('accessToken')
-        window.location.href = '/login'
+        // const isAuthRoute = window.location.pathname === "/login";
+
+        // if (!isAuthRoute) {
+        //     localStorage.removeItem('accessToken')
+        //     localStorage.removeItem('userData')
+        //     window.location.href = '/login'
+        // }
+
     }
     return Promise.reject(err)
 })

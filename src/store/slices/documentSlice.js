@@ -23,15 +23,15 @@ const documentSlice = createSlice({
     reducers: {
         resetUpldState: (state) => {
             state.upldLoading = false,
-            state.upldSuccess = false,
-            state.upldError = false,
-            state.upldMessage = null
+                state.upldSuccess = false,
+                state.upldError = false,
+                state.upldMessage = null
         },
         resetSearchState: (state) => {
             state.srchLoading = false,
-            state.srchSuccess = false,
-            state.srchError = false,
-            state.srchMessage = null
+                state.srchSuccess = false,
+                state.srchError = false,
+                state.srchMessage = null
         }
     },
 
@@ -45,7 +45,7 @@ const documentSlice = createSlice({
                 state.upldLoading = false
                 state.upldSuccess = true
                 state.upldDocData = action.payload.data,
-                state.upldMessage = null
+                    state.upldMessage = null
             })
             .addCase(uploadDocument.rejected, (state, action) => {
                 state.upldLoading = false
@@ -58,9 +58,19 @@ const documentSlice = createSlice({
                 state.srchLoading = true
             })
             .addCase(searchDocument.fulfilled, (state, action) => {
-                state.srchLoading = false
-                state.srchSuccess = true
-                state.srchDocData = action.payload
+                if (action.payload.status) {
+                    state.srchLoading = false
+                    state.srchSuccess = true
+                    state.srchError = false
+                    state.srchMessage = null
+                    state.srchDocData = action.payload
+                }
+                else {
+                    state.srchLoading = false
+                    state.srchSuccess = false
+                    state.srchError = true
+                    state.srchMessage = null
+                 }
             })
             .addCase(searchDocument.rejected, (state, action) => {
                 state.srchLoading = false
