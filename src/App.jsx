@@ -1,11 +1,10 @@
-import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PublicRoute from './routes/PublicRoute.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import { routes } from './routes/Index.jsx';
 import MainLayout from "./layouts/MainLayout.jsx"
 const Login = lazy(() => import('./pages/auth/Login.jsx'))
-
 
 
 const App = () => {
@@ -23,7 +22,7 @@ const App = () => {
           </PublicRoute>
         }
       />
-
+      {/* Protected Routes */}
       <Route
         path="/"
         element={
