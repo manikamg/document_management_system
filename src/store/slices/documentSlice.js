@@ -58,15 +58,21 @@ const documentSlice = createSlice({
                 state.upldLoading = true
             })
             .addCase(uploadDocument.fulfilled, (state, action) => {
-                // state.upldLoading = false
-                // state.upldSuccess = true
-                // state.upldDocData = action.payload.data,
-                //     state.upldMessage = null
+                if (action.payload.status) {
+                    state.upldLoading = false
+                    state.upldSuccess = true
+                    state.upldMessage = action.payload.message
+                } else {
+                    state.upldLoading = false
+                    state.Error = true
+                    state.upldMessage = action.payload.message
+                }
+
             })
             .addCase(uploadDocument.rejected, (state, action) => {
-                // state.upldLoading = false
-                // state.upldError = true
-                // state.upldMessage = action.payload
+                state.upldLoading = false
+                state.upldError = true
+                state.upldMessage = action.payload
             })
 
             // Search document

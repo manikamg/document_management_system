@@ -14,6 +14,13 @@ api.interceptors.request.use((config) => {
         config.headers = config.headers || {};
         config.headers.token = token;
     }
+
+    if (config.data instanceof FormData) {
+        delete config.headers["Content-Type"];
+    } else {
+        config.headers["Content-Type"] = "application/json";
+    }
+
     return config
 })
 

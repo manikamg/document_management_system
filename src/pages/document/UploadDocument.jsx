@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Form, Button } from 'react-bootstrap';
 import { CrossCircle, Tag } from '../../components/ui/Icon';
 import { ToastContainer, toast } from 'react-toastify';
+import { formatDateToDDMMYYYY } from '../../features/document/formatDate';
 import { useDispatch, useSelector } from 'react-redux';
 import { resetUploadState } from '../../store/slices/documentSlice';
 import { uploadDocument, fetchPersonalNames, fetchDepartments } from "../../features/document/documentThunk"
@@ -15,9 +16,10 @@ const FileUpload = () => {
     const {
         personalNames,
         departments,
-        uploading,
-        error,
-        success,
+        upldLoading,
+        upldMessage,
+        upldSuccess,
+        upldError,
     } = useSelector((state) => state.document);
     const {
         tagSuccess,
@@ -34,15 +36,14 @@ const FileUpload = () => {
     const [filePreview, setFilePreview] = useState(null);
     const [tags, setTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
-    const [file, setFile] = useState(null)
-    const [selectedDate, setSelectedDate] = useState(null);
     const [uploadForm, setUploadForm] = useState(
         {
             major_head: "",
             minor_head: "",
             document_date: "",
             document_remarks: "",
-            user_id: user.user_id
+            user_id: user.user_id,
+            file: null
         }
     )
     // Load initial data
@@ -59,6 +60,7 @@ const FileUpload = () => {
     useEffect(() => {
         if (tagSuccess) {
             setTags(tagData)
+            dispatch(resetTagState())
         }
     }, [tagSuccess, tagError])
     // Filter tag suggestions
@@ -76,13 +78,6 @@ const FileUpload = () => {
             setShowTagDropdown(false);
         }
     }, [newTag, tags, selectedTags]);
-
-    // Clear messages on unmount
-    // useEffect(() => {
-    //     return () => {
-
-    //     };
-    // }, [dispatch]);
 
     // Handle form field changes
     const handleChange = ({ target: { name, value } }) => {
@@ -120,6 +115,11 @@ const FileUpload = () => {
             return;
         }
 
+        setUploadForm((pre) => ({
+            ...pre,
+            file: file
+        }))
+
         // Create preview for images
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
@@ -152,7 +152,15 @@ const FileUpload = () => {
         }
     };
 
-    // Handle tag selection
+    // Get second dropdown options based on majorHead
+    const getMinorHeadOptions = () => {
+        if (uploadForm.major_head === 'Personal') {
+            return personalNames;
+        } else if (uploadForm.major_head === 'Professional') {
+            return departments;
+        }
+        return [];
+    };
 
     // Add tag
     const addTag = (tagName) => {
@@ -181,42 +189,59 @@ const FileUpload = () => {
     };
 
     // Handle form submission
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
 
-        const formData = new FormData();
-        formData.append('documentDate', uploadForm.document_date);
-        formData.append('majorHead', uploadForm.major_head);
-        formData.append('minorHead', uploadForm.minor_head);
-        formData.append('tags', JSON.stringify(selectedTags));
-        formData.append('remarks', uploadForm.document_remarks || '');
-        formData.append('file', file);
+        const form = event.currentTarget;
+        if (form.checkValidity() === false) {
+            setValidated(true);
+        } else {
+            const formData = new FormData();
+            formData.append('file', uploadForm.file);
 
-        dispatch(uploadDocument(formData));
-    };
+            const payload = {
+                major_head: uploadForm.major_head,
+                minor_head: uploadForm.minor_head,
+                document_date: formatDateToDDMMYYYY(uploadForm.document_date),
+                document_remarks: uploadForm.document_remarks || '',
+                tags: selectedTags,
+                user_id: uploadForm.user_id
+            };
 
-    // Handle success - reset form
-    // useEffect(() => {
-    //     if (success) {
-    //         setTimeout(() => {
-    //             dispatch(resetUploadState());
-    //             setFilePreview(null);
-    //             if (fileInputRef.current) {
-    //                 fileInputRef.current.value = '';
-    //             }
-    //         }, 2000);
-    //     }
-    // }, [success, dispatch]);
+            formData.append("data", JSON.stringify(payload));
 
-    // Get second dropdown options based on majorHead
-    const getMinorHeadOptions = () => {
-        if (uploadForm.major_head === 'Personal') {
-            return personalNames;
-        } else if (uploadForm.major_head === 'Professional') {
-            return departments;
+            dispatch(uploadDocument(formData));
         }
-        return [];
     };
+
+    useEffect(() => {
+        if (upldSuccess || upldError) {
+            upldSuccess ? toast.success(upldMessage) : toast.error(upldMessage)
+            dispatch(resetUploadState());
+            setFilePreview(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+            setNewTag('')
+            setTagSuggestions([])
+            setShowTagDropdown(false)
+            setDragOver(false)
+            setFilePreview(null)
+            setSelectedTags([])
+            setUploadForm((pre) => ({
+                ...pre,
+                major_head: "",
+                minor_head: "",
+                document_date: "",
+                document_remarks: "",
+                user_id: user.user_id,
+                file: null
+            }))
+        }
+    }, [upldSuccess, upldError, dispatch]);
+
+
 
     return (
         <div className="fade-in">
@@ -318,7 +343,6 @@ const FileUpload = () => {
                                             <span key={tag.tag_name} className="tag">
                                                 {tag.tag_name}
                                                 <CrossCircle color="red" size="20" onClick={() => removeTag(tag)} />
-
                                             </span>
                                         ))}
                                     </div>
@@ -370,6 +394,7 @@ const FileUpload = () => {
                                         placeholder="Add any remarks about this document..."
                                         value={uploadForm.remarks}
                                         onChange={handleChange}
+                                        required
                                     />
                                 </Form.Group>
 
@@ -397,7 +422,7 @@ const FileUpload = () => {
                                         {uploadForm.file ? (
                                             <div>
                                                 <i className="fas fa-file-pdf fa-3x text-primary mb-3"></i>
-                                                <p className="mb-1 fw-bold">{uploadForm.fileName}</p>
+                                                <p className="mb-1 fw-bold">{uploadForm.file.name}</p>
                                                 <p className="text-muted mb-0">
                                                     {(uploadForm.file.size / 1024 / 1024).toFixed(2)} MB
                                                 </p>
@@ -428,8 +453,8 @@ const FileUpload = () => {
 
                                 {/* Submit & Reset Buttons */}
                                 <div className="d-grid gap-2">
-                                    <Button type="submit" size="lg" disabled={uploading}>
-                                        {uploading ? (
+                                    <Button type="submit" size="lg" disabled={upldLoading}>
+                                        {upldLoading ? (
                                             <>
                                                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                                                 Uploading...
