@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { CrossCircle, Tag, Download, Eye, EyeSlash } from '../../components/ui/Icon';
+import { CrossCircle, Tag, Download, Eye, EyeSlash, Pdf } from '../../components/ui/Icon';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   resetSearchState,
 } from '../../store/slices/documentSlice';
+// import { Document, Page, pdfjs } from "react-pdf";
 import { setPreviewDocument } from '../../store/slices/uiSlice';
 import { checkFileType } from '../../features/document/fileTypeFeature';
 import { searchDocuments, fetchPersonalNames, fetchDepartments } from "../../features/document/documentThunk"
@@ -12,6 +13,10 @@ import { resetTagState } from '../../store/slices/tagSlice';
 
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+
+import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
+
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const SearchDocument = () => {
   const dispatch = useDispatch();
@@ -32,7 +37,6 @@ const SearchDocument = () => {
   } = useSelector((state) => state.tag)
   const { previewDocument } = useSelector((state) => state.ui)
 
-  console.log(previewDocument)
   // Local state
   const [tags, setTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
@@ -56,6 +60,8 @@ const SearchDocument = () => {
     }
   })
   const [searchResults, setSearchResults] = useState([])
+  const [fileType, setFileType] = useState(null);
+  const [numPages, setNumPages] = useState(null);
   // Load initial data
   useEffect(() => {
     const docTagData = {
@@ -146,6 +152,7 @@ const SearchDocument = () => {
 
   // Handle preview
   const handlePreview = (document) => {
+    getFiletype(document.file_url)
     setCurrentPreview(document);
     setPreviewModalOpen(true);
     dispatch(setPreviewDocument(document));
@@ -207,7 +214,7 @@ const SearchDocument = () => {
   // Check if file is previewable
   const isPreviewable = async (url) => {
     let status = false
-    
+
     const type = await checkFileType(url);
     if (type === 'image') {
       status = true
@@ -222,7 +229,7 @@ const SearchDocument = () => {
   // Check if file is previewable
   const getFiletype = async (url) => {
     const type = await checkFileType(url);
-    return type;
+    setFileType(type)
   };
 
   return (
@@ -530,30 +537,45 @@ const SearchDocument = () => {
 
                 {/* Preview Content */}
                 <div className="bg-light p-4 rounded text-center">
-                  {getFiletype(currentPreview.file_url) == 'image' ? (
+                  {fileType === 'image' ? (
                     <div>
                       <i className="fas fa-image fa-5x text-muted mb-3"></i>
                       <p className="text-muted">
-                        Image preview would be displayed here in production
-                      </p>
-                      <p className="small text-muted">
-                        File: {currentPreview.fileName}
+                        <img src={currentPreview.file_url} alt="image" width="200" />
                       </p>
                     </div>
-                  ) : currentPreview.fileType?.includes('pdf') ? (
+                  ) : fileType === 'pdf' ? (
                     <div>
                       <i className="fas fa-file-pdf fa-5x text-danger mb-3"></i>
                       <p className="text-muted">
-                        PDF preview would be displayed here in production
-                      </p>
-                      <p className="small text-muted">
-                        File: {currentPreview.fileName}
+
+
+                        <a href={currentPreview.file_url} target='blank_'>
+                          <p className="d-flex flex-column align-items-center gap-2">
+                            <Pdf size='100'/>
+                            <span>View PDF</span>
+                          </p>
+
+                        </a>
+
+                        {/* <Document
+                          file={currentPreview.file_url}
+                          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                          onLoadError={(err) => {
+                            console.error("PDF LOAD ERROR => ", err);
+                          }}
+                        >
+                          {Array.from(new Array(numPages), (_, i) => (
+                            <Page key={i} pageNumber={i + 1} />
+                          ))}
+                        </Document> */}
                       </p>
                     </div>
                   ) : (
                     <div>
                       <i className="fas fa-file fa-5x text-muted mb-3"></i>
                       <p className="text-muted">Preview not available for this file type</p>
+                      {/* {getFiletype(currentPreview.file_url)} */}
                     </div>
                   )}
                 </div>
