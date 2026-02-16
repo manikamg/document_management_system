@@ -14,9 +14,9 @@ import { resetTagState } from '../../store/slices/tagSlice';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
-import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
+// import workerSrc from "pdfjs-dist/build/pdf.worker.min?url";
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+// pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const SearchDocument = () => {
   const dispatch = useDispatch();
@@ -114,14 +114,6 @@ const SearchDocument = () => {
       }));
     }
   };
-  const handleDateChange = ({ target: { name, value } }) => {
-    const date = formatDateToDDMMYYYY(value)
-    setSearchParams((prev) => ({
-      ...prev,
-      [name]: date
-    }));
-  }
-
   // Add tag
   const addTag = (tagName) => {
     if (!tagName.trim()) return; // empty tag ignore
@@ -155,39 +147,44 @@ const SearchDocument = () => {
     getFiletype(document.file_url)
     setCurrentPreview(document);
     setPreviewModalOpen(true);
-    dispatch(setPreviewDocument(document));
-  };
-
-  // Handle download single file
-  const handleDownload = (document) => {
-    // In a real app, this would download from the server
-    // For demo, we'll create a mock file
-    const blob = new Blob([`Document: ${document.fileName}\nType: ${document.fileType}\nDate: ${document.documentDate}`], {
-      type: 'text/plain;charset=utf-8',
-    });
-    saveAs(blob, document.fileName);
   };
 
   // Handle download all as ZIP
   const handleDownloadAll = async () => {
     if (searchResults.length === 0) {
-      alert('No documents to download');
+      toast.error('No documents to download');
       return;
     }
 
+    // searchResults.forEach((doc, index) => {
+    //   const url = doc.file_url
+    //   setTimeout(() => {
+    //     const a = document.createElement("a");
+    //     a.href = url;
+    //     a.target = "_blank";
+    //     a.click();
+    //   }, index * 800);
+    // });
+
     const zip = new JSZip();
-    const folder = zip.folder('documents');
+    const folder = zip.folder("documents");
 
-    searchResults.forEach((doc) => {
-      // Add mock content for each document
-      folder.file(
-        doc.fileName,
-        `Document: ${doc.fileName}\nType: ${doc.fileType}\nCategory: ${doc.major_head}\n${doc.remarks || ''}`
-      );
-    });
+    await Promise.all(
+      searchResults.map(async (file) => {
+        try {
+          console.log("first render")
+          const response = await fetch(file.url);
+          const blob = await response.blob();
+          console.log("second render")
+          folder.file(file.fileName, blob);
+        } catch (err) {
+          console.error("Download failed:", file.url);
+        }
+      })
+    );
 
-    const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(content, `documents_${new Date().toISOString().split('T')[0]}.zip`);
+    const content = await zip.generateAsync({ type: "blob" });
+    saveAs(content, "documents.zip");
   };
 
   // Get second dropdown options
@@ -198,17 +195,6 @@ const SearchDocument = () => {
       return departments;
     }
     return [];
-  };
-
-  // Get file icon based on type
-  const getFileIcon = (fileType) => {
-    if (fileType?.includes('pdf')) {
-      return <i className="fas fa-file-pdf fa-2x text-danger"></i>;
-    } else if (fileType?.includes('image')) {
-      return <i className="fas fa-file-image fa-2x text-success"></i>;
-    } else {
-      return <i className="fas fa-file fa-2x text-secondary"></i>;
-    }
   };
 
   // Check if file is previewable
@@ -232,6 +218,15 @@ const SearchDocument = () => {
     setFileType(type)
   };
 
+  const downloadFile = async (url) => {
+    const fileName = await checkFileType(url);
+    if (fileName === "image") {
+      saveAs(url, "image.jpg");
+    }
+    else {
+      saveAs(url, "document.pdf");
+    }
+  };
   return (
     <div className="fade-in">
       {/* Search Filters */}
@@ -442,11 +437,10 @@ const SearchDocument = () => {
                     <tr key={doc.document_id}>
                       <td>
                         <div className="d-flex align-items-center">
-                          {getFileIcon(doc.fileType)}
                           <div className="ms-2">
-                            <div className="fw-bold">{doc.fileName}</div>
+                            {/* <div className="fw-bold">{doc.fileName}</div> */}
                             <small className="text-muted">
-                              {doc.fileType?.split('/')[1]?.toUpperCase() || 'FILE'}
+                              FILE
                             </small>
                           </div>
                         </div>
@@ -496,7 +490,7 @@ const SearchDocument = () => {
                           )}
                           <button
                             className="btn btn-sm btn-outline-success"
-                            onClick={() => handleDownload(doc)}
+                            onClick={() => downloadFile(doc.file_url)}
                             title="Download"
                           >
                             <Download />
@@ -547,12 +541,12 @@ const SearchDocument = () => {
                   ) : fileType === 'pdf' ? (
                     <div>
                       <i className="fas fa-file-pdf fa-5x text-danger mb-3"></i>
-                      <p className="text-muted">
+                      <div className="text-muted">
 
 
                         <a href={currentPreview.file_url} target='blank_'>
                           <p className="d-flex flex-column align-items-center gap-2">
-                            <Pdf size='100'/>
+                            <Pdf size='100' />
                             <span>View PDF</span>
                           </p>
 
@@ -569,7 +563,7 @@ const SearchDocument = () => {
                             <Page key={i} pageNumber={i + 1} />
                           ))}
                         </Document> */}
-                      </p>
+                      </div>
                     </div>
                   ) : (
                     <div>
@@ -623,7 +617,7 @@ const SearchDocument = () => {
                   type="button"
                   className="btn btn-primary"
                   onClick={() => {
-                    handleDownload(currentPreview);
+                    downloadFile(currentPreview.file_url);
                     setPreviewModalOpen(false);
                   }}
                 >
