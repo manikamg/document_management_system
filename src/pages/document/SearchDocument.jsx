@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { CrossCircle, Tag } from '../../components/ui/Icon';
+import { CrossCircle, Tag, Download, Eye, EyeSlash } from '../../components/ui/Icon';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  clearSearchParams,
-  clearSearchResults,
-  resetUploadState,
+  resetSearchState,
 } from '../../store/slices/documentSlice';
 import { setPreviewDocument } from '../../store/slices/uiSlice';
-
+import { checkFileType } from '../../features/document/fileTypeFeature';
 import { searchDocuments, fetchPersonalNames, fetchDepartments } from "../../features/document/documentThunk"
 import { documentTags } from "../../features/tag/tagThunk"
 import { resetTagState } from '../../store/slices/tagSlice';
@@ -17,21 +15,24 @@ import { saveAs } from 'file-saver';
 
 const SearchDocument = () => {
   const dispatch = useDispatch();
-
+  const { user } = useSelector((state) => state.auth)
   const {
     personalNames,
     departments,
-    searchResults,
-    searching,
-    error,
+    srchLoading,
+    srchSuccess,
+    srchError,
+    srchMessage,
+    srchDocData
   } = useSelector((state) => state.document);
-
   const {
     tagSuccess,
     tagError,
     tagData
   } = useSelector((state) => state.tag)
+  const { previewDocument } = useSelector((state) => state.ui)
 
+  console.log(previewDocument)
   // Local state
   const [tags, setTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
@@ -46,17 +47,15 @@ const SearchDocument = () => {
     "minor_head": "",
     "from_date": "",
     "to_date": "",
-    "tags": [{ "tag_name": "" }, { "tag_name": "" }],
-    "uploaded_by": "",
+    "uploaded_by": user.user_id,
     "start": 0,
-    "length": 5,
+    "length": 10,
     "filterId": "",
     "search": {
       "value": ""
     }
   })
-  console.log(searchParams)
-
+  const [searchResults, setSearchResults] = useState([])
   // Load initial data
   useEffect(() => {
     const docTagData = {
@@ -72,15 +71,11 @@ const SearchDocument = () => {
       setTags(tagData)
       dispatch(resetTagState())
     }
-  }, [tagSuccess, tagError])
 
-  // Clear messages on unmount
-  useEffect(() => {
-    return () => {
-      dispatch(resetUploadState());
-      dispatch(clearSearchResults());
-    };
-  }, [dispatch]);
+    if (srchSuccess) {
+      setSearchResults(srchDocData.data)
+    }
+  }, [tagSuccess, tagError, srchSuccess, srchError])
 
   // Filter tag suggestions
   useEffect(() => {
@@ -99,15 +94,27 @@ const SearchDocument = () => {
   }, [newTag, tags, selectedTags]);
 
   // Handle input changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    dispatch(setSearchParams({ [name]: value }));
+  const handleChange = ({ target: { name, value } }) => {
+    setSearchParams((prev) => ({
+      ...prev,
+      [name]: value
+    }));
 
     // Reset minorHead when major_head changes
     if (name === 'major_head') {
-      dispatch(setSearchParams({ major_head: '' }));
+      setSearchParams((prev) => ({
+        ...prev,
+        minor_head: ''
+      }));
     }
   };
+  const handleDateChange = ({ target: { name, value } }) => {
+    const date = formatDateToDDMMYYYY(value)
+    setSearchParams((prev) => ({
+      ...prev,
+      [name]: date
+    }));
+  }
 
   // Add tag
   const addTag = (tagName) => {
@@ -127,38 +134,14 @@ const SearchDocument = () => {
     if (!tagName.tag_name.trim()) return;
     setSelectedTags(selectedTags.filter(tag => tag.tag_name !== tagName.tag_name.trim()));
   };
-
-  // Handle tag selection
-  const handleSelectTag = (tag) => {
-    if (!selectedTags.includes(tag)) {
-      const newTags = [...selectedTags, tag];
-      setSelectedTags(newTags);
-      dispatch(setSearchParams({ tags: newTags }));
-    }
-    setNewTag('');
-    setShowTagDropdown(false);
-  };
-
-  // Remove selected tag
-  const handleRemoveTag = (tag) => {
-    const newTags = selectedTags.filter((t) => t !== tag);
-    setSelectedTags(newTags);
-    dispatch(setSearchParams({ tags: newTags }));
-  };
-
   // Handle search
   const handleSearch = () => {
-    dispatch(searchDocuments({
-      ...searchParams,
-      tags: selectedTags,
-    }));
+    const data = { ...searchParams, tags: selectedTags }
+    dispatch(searchDocuments(data));
   };
-
   // Handle clear filters
   const handleClearFilters = () => {
-    dispatch(clearSearchParams());
     setSelectedTags([]);
-    dispatch(clearSearchResults());
   };
 
   // Handle preview
@@ -222,8 +205,24 @@ const SearchDocument = () => {
   };
 
   // Check if file is previewable
-  const isPreviewable = (fileType) => {
-    return fileType?.includes('pdf') || fileType?.includes('image');
+  const isPreviewable = async (url) => {
+    let status = false
+    
+    const type = await checkFileType(url);
+    if (type === 'image') {
+      status = true
+    } else if (type === 'pdf') {
+      status = true
+    } else {
+      status = false
+    }
+    return status;
+  };
+
+  // Check if file is previewable
+  const getFiletype = async (url) => {
+    const type = await checkFileType(url);
+    return type;
   };
 
   return (
@@ -233,19 +232,6 @@ const SearchDocument = () => {
         <h5 className="mb-3">
           <i className="fas fa-filter me-2"></i>Search Filters
         </h5>
-
-        {/* Error Alert */}
-        {error && (
-          <div className="alert alert-danger alert-dismissible fade show" role="alert">
-            <i className="fas fa-exclamation-circle me-2"></i>
-            {error}
-            <button
-              type="button"
-              className="btn-close"
-              onClick={() => dispatch(resetUploadState())}
-            ></button>
-          </div>
-        )}
 
         <div className="row g-3">
           {/* Category Dropdown */}
@@ -266,15 +252,15 @@ const SearchDocument = () => {
 
           {/* Name/Department Dropdown */}
           <div className="col-md-3">
-            <label htmlFor="minorHead" className="form-label">
+            <label htmlFor="minor_head" className="form-label">
               {searchParams.major_head === 'Personal' ? 'Name' :
                 searchParams.major_head === 'Professional' ? 'Department' : 'Name/Dept'}
             </label>
             <select
               className="form-select"
-              id="minorHead"
-              name="minorHead"
-              value={searchParams.minorHead}
+              id="minor_head"
+              name="minor_head"
+              value={searchParams.minor_head}
               onChange={handleChange}
               disabled={!searchParams.major_head}
             >
@@ -289,26 +275,26 @@ const SearchDocument = () => {
 
           {/* From Date */}
           <div className="col-md-3">
-            <label htmlFor="fromDate" className="form-label">From Date</label>
+            <label htmlFor="from_date" className="form-label">From Date</label>
             <input
               type="date"
               className="form-control"
-              id="fromDate"
-              name="fromDate"
-              value={searchParams.fromDate}
+              id="from_date"
+              name="from_date"
+              value={searchParams.from_date}
               onChange={handleChange}
             />
           </div>
 
           {/* To Date */}
           <div className="col-md-3">
-            <label htmlFor="toDate" className="form-label">To Date</label>
+            <label htmlFor="to_date" className="form-label">To Date</label>
             <input
               type="date"
               className="form-control"
-              id="toDate"
-              name="toDate"
-              value={searchParams.toDate}
+              id="to_date"
+              name="to_date"
+              value={searchParams.to_date}
               onChange={handleChange}
             />
           </div>
@@ -363,9 +349,9 @@ const SearchDocument = () => {
               <button
                 className="btn btn-primary"
                 onClick={handleSearch}
-                disabled={searching}
+                disabled={srchLoading}
               >
-                {searching ? (
+                {srchLoading ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                     Searching...
@@ -380,7 +366,7 @@ const SearchDocument = () => {
               <button
                 className="btn btn-outline-secondary"
                 onClick={handleClearFilters}
-                disabled={searching}
+                disabled={srchLoading}
               >
                 <i className="fas fa-times me-2"></i>
                 Clear Filters
@@ -409,7 +395,7 @@ const SearchDocument = () => {
         </div>
 
         <div className="card-body">
-          {searching ? (
+          {srchLoading ? (
             <div className="spinner-container">
               <div className="spinner-border" role="status">
                 <span className="visually-hidden">Loading...</span>
@@ -438,7 +424,7 @@ const SearchDocument = () => {
                     <th>File</th>
                     <th>Category</th>
                     <th>Name/Dept</th>
-                    <th>Tags</th>
+                    {/* <th>Tags</th> */}
                     <th>Date</th>
                     <th>Remarks</th>
                     <th>Actions</th>
@@ -446,7 +432,7 @@ const SearchDocument = () => {
                 </thead>
                 <tbody>
                   {searchResults.map((doc) => (
-                    <tr key={doc.id}>
+                    <tr key={doc.document_id}>
                       <td>
                         <div className="d-flex align-items-center">
                           {getFileIcon(doc.fileType)}
@@ -464,32 +450,33 @@ const SearchDocument = () => {
                           {doc.major_head}
                         </span>
                       </td>
-                      <td>{doc.minorHead}</td>
-                      <td>
+                      <td>{doc.minor_head}</td>
+                      {/* <td>
                         <div className="d-flex flex-wrap gap-1">
                           {doc.tags?.map((tag) => (
-                            <span key={tag} className="tag" style={{ fontSize: '0.75rem' }}>
-                              {tag}
+                            <span key={tag.tag_name} className="tag" style={{ fontSize: '0.75rem' }}>
+                              {tag.tag_name}
                             </span>
                           ))}
                         </div>
-                      </td>
-                      <td>{doc.documentDate}</td>
+                      </td> */}
+                      <td>{doc.document_date.slice(0, 10)}</td>
                       <td>
                         <small className="text-muted">
-                          {doc.remarks?.substring(0, 50)}
-                          {doc.remarks?.length > 50 && '...'}
+                          {doc.document_remarks?.substring(0, 50)}
+                          {doc.document_remarks?.length > 50 && '...'}
+                          {doc.document_remarks?.length == 0 && '-'}
                         </small>
                       </td>
                       <td>
                         <div className="d-flex gap-2">
-                          {isPreviewable(doc.fileType) ? (
+                          {isPreviewable(doc.file_url) ? (
                             <button
                               className="btn btn-sm btn-outline-primary"
                               onClick={() => handlePreview(doc)}
                               title="Preview"
                             >
-                              <i className="fas fa-eye"></i>
+                              <Eye />
                             </button>
                           ) : (
                             <button
@@ -497,7 +484,7 @@ const SearchDocument = () => {
                               disabled
                               title="Preview not available"
                             >
-                              <i className="fas fa-eye-slash"></i>
+                              <EyeSlash />
                             </button>
                           )}
                           <button
@@ -505,7 +492,7 @@ const SearchDocument = () => {
                             onClick={() => handleDownload(doc)}
                             title="Download"
                           >
-                            <i className="fas fa-download"></i>
+                            <Download />
                           </button>
                         </div>
                       </td>
@@ -540,14 +527,10 @@ const SearchDocument = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                <div className="text-center mb-3">
-                  {getFileIcon(currentPreview.fileType)}
-                  <h6 className="mt-2">{currentPreview.fileName}</h6>
-                </div>
 
                 {/* Preview Content */}
                 <div className="bg-light p-4 rounded text-center">
-                  {currentPreview.fileType?.includes('image') ? (
+                  {getFiletype(currentPreview.file_url) == 'image' ? (
                     <div>
                       <i className="fas fa-image fa-5x text-muted mb-3"></i>
                       <p className="text-muted">
@@ -586,15 +569,15 @@ const SearchDocument = () => {
                       </tr>
                       <tr>
                         <td><strong>Name/Department:</strong></td>
-                        <td>{currentPreview.minorHead}</td>
+                        <td>{currentPreview.minor_head}</td>
                       </tr>
                       <tr>
                         <td><strong>Date:</strong></td>
-                        <td>{currentPreview.documentDate}</td>
+                        <td>{currentPreview.document_date.slice(0, 10)}</td>
                       </tr>
                       <tr>
                         <td><strong>Uploaded By:</strong></td>
-                        <td>{currentPreview.uploadedBy}</td>
+                        <td>{currentPreview.uploaded_by}</td>
                       </tr>
                       {currentPreview.remarks && (
                         <tr>

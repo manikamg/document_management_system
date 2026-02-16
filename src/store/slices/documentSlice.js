@@ -22,9 +22,6 @@ const initialState = {
     tagsMessage: null,
     personalNames: ['John', 'Tom', 'Emily', 'Michael', 'Sarah', 'David', 'Lisa', 'James'],
     departments: ['Accounts', 'HR', 'IT', 'Finance', 'Marketing', 'Operations', 'Sales', 'Legal'],
-    searchResults: [],
-
-    
 }
 
 const documentSlice = createSlice({
@@ -33,22 +30,16 @@ const documentSlice = createSlice({
     reducers: {
         resetUploadState: (state) => {
             state.upldLoading = false,
-                state.upldSuccess = false,
-                state.upldError = false,
-                state.upldMessage = null
+            state.upldSuccess = false,
+            state.upldError = false,
+            state.upldMessage = null
         },
-        
-        clearSearchParams: (state) => {
-            state.searchParams = initialState.searchParams;
-        },
-        clearSearchResults: (state) => {
-            state.searchResults = [];
-        },
+
         resetSearchState: (state) => {
             state.srchLoading = false,
-                state.srchSuccess = false,
-                state.srchError = false,
-                state.srchMessage = null
+            state.srchSuccess = false,
+            state.srchError = false,
+            state.srchMessage = null
         }
     },
 
@@ -111,5 +102,5 @@ const documentSlice = createSlice({
     },
 })
 
-export const { resetUploadState, clearSearchParams, clearSearchResults, resetSearchState } = documentSlice.actions
+export const { resetUploadState, resetSearchState } = documentSlice.actions
 export default documentSlice.reducer

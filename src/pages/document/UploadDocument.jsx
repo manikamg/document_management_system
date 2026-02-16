@@ -390,9 +390,9 @@ const FileUpload = () => {
                                     <Form.Control
                                         as="textarea"
                                         rows={3}
-                                        name="remarks"
+                                        name="document_remarks"
                                         placeholder="Add any remarks about this document..."
-                                        value={uploadForm.remarks}
+                                        value={uploadForm.document_remarks}
                                         onChange={handleChange}
                                         required
                                     />
