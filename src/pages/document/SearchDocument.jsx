@@ -156,26 +156,14 @@ const SearchDocument = () => {
       return;
     }
 
-    // searchResults.forEach((doc, index) => {
-    //   const url = doc.file_url
-    //   setTimeout(() => {
-    //     const a = document.createElement("a");
-    //     a.href = url;
-    //     a.target = "_blank";
-    //     a.click();
-    //   }, index * 800);
-    // });
-
     const zip = new JSZip();
     const folder = zip.folder("documents");
 
     await Promise.all(
       searchResults.map(async (file) => {
         try {
-          console.log("first render")
-          const response = await fetch(file.url);
+          const response = await fetch(file.file_url);
           const blob = await response.blob();
-          console.log("second render")
           folder.file(file.fileName, blob);
         } catch (err) {
           console.error("Download failed:", file.url);
@@ -185,6 +173,16 @@ const SearchDocument = () => {
 
     const content = await zip.generateAsync({ type: "blob" });
     saveAs(content, "documents.zip");
+
+    searchResults.forEach((doc, index) => {
+      const url = doc.file_url
+      setTimeout(() => {
+        const a = document.createElement("a");
+        a.href = url;
+        a.target = "_blank";
+        a.click();
+      }, index * 800);
+    });
   };
 
   // Get second dropdown options
