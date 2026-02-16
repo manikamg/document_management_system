@@ -20,7 +20,7 @@ const Dashboard = () => {
             "tags": [{ "tag_name": "" }],
             "uploaded_by": "",
             "start": 0,
-            "length": 10,
+            "length": 3,
             "filterId": "",
             "search": {
                 "value": ""

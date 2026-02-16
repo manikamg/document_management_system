@@ -5,7 +5,6 @@ import {
   resetSearchState,
 } from '../../store/slices/documentSlice';
 // import { Document, Page, pdfjs } from "react-pdf";
-import { setPreviewDocument } from '../../store/slices/uiSlice';
 import { checkFileType } from '../../features/document/fileTypeFeature';
 import { searchDocuments, fetchPersonalNames, fetchDepartments } from "../../features/document/documentThunk"
 import { documentTags } from "../../features/tag/tagThunk"
@@ -27,15 +26,14 @@ const SearchDocument = () => {
     srchLoading,
     srchSuccess,
     srchError,
-    srchMessage,
     srchDocData
   } = useSelector((state) => state.document);
+
   const {
     tagSuccess,
     tagError,
     tagData
   } = useSelector((state) => state.tag)
-  const { previewDocument } = useSelector((state) => state.ui)
 
   // Local state
   const [tags, setTags] = useState([]);
@@ -61,7 +59,7 @@ const SearchDocument = () => {
   })
   const [searchResults, setSearchResults] = useState([])
   const [fileType, setFileType] = useState(null);
-  const [numPages, setNumPages] = useState(null);
+  // const [numPages, setNumPages] = useState(null);
   // Load initial data
   useEffect(() => {
     const docTagData = {
@@ -80,6 +78,7 @@ const SearchDocument = () => {
 
     if (srchSuccess) {
       setSearchResults(srchDocData.data)
+      dispatch(resetSearchState())
     }
   }, [tagSuccess, tagError, srchSuccess, srchError])
 
@@ -134,11 +133,26 @@ const SearchDocument = () => {
   };
   // Handle search
   const handleSearch = () => {
+    setSearchResults([])
     const data = { ...searchParams, tags: selectedTags }
     dispatch(searchDocuments(data));
   };
   // Handle clear filters
   const handleClearFilters = () => {
+    setSearchParams((prev) => ({
+      ...prev,
+      "major_head": "",
+      "minor_head": "",
+      "from_date": "",
+      "to_date": "",
+      "uploaded_by": user.user_id,
+      "start": 0,
+      "length": 10,
+      "filterId": "",
+      "search": {
+        "value": ""
+      }
+    }));
     setSelectedTags([]);
   };
 
@@ -431,7 +445,7 @@ const SearchDocument = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {searchResults.map((doc) => (
+                  {[...searchResults].reverse().map((doc) => (
                     <tr key={doc.document_id}>
                       <td>
                         <div className="d-flex align-items-center">

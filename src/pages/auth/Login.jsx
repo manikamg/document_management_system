@@ -95,7 +95,7 @@ const Login = () => {
     }
 
     return (
-        <div className="login-container">
+        <div className="login-container height100vh">
             <div className="login-card fade-in">
                 <div className="login-header">
                     <h1>

@@ -37,6 +37,8 @@ const authSlice = createSlice({
             state.accessToken = null;
             state.isAuthenticated = false;
             localStorage.removeItem('accessToken')
+            localStorage.removeItem('userData')
+            localStorage.removeItem('dummyUsers')
         },
         resetOtpState: (state) => {
             state.loading = false
@@ -115,7 +117,9 @@ const authSlice = createSlice({
                     state.vrfyError = true
                     state.isAuthenticated = false
                     state.vrfyMessage = action.payload.message
-                    localStorage.removeItem('accessToken')
+                    ocalStorage.removeItem('accessToken')
+                    localStorage.removeItem('userData')
+                    localStorage.removeItem('dummyUsers')
                 }
             })
             .addCase(verifyLoginOtp.rejected, (state, action) => {
@@ -123,7 +127,9 @@ const authSlice = createSlice({
                 state.vrfySuccess = false
                 state.vrfyError = true
                 state.isAuthenticated = false
-                localStorage.removeItem('accessToken')
+                ocalStorage.removeItem('accessToken')
+                localStorage.removeItem('userData')
+                localStorage.removeItem('dummyUsers')
             })
     },
 })

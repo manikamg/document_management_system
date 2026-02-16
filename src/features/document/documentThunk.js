@@ -33,22 +33,6 @@ export const searchDocuments = createAsyncThunk(
     }
 )
 
-export const fetchTags = createAsyncThunk(
-    'document/fetchTags',
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await documentAPI.getTags();
-            return response.data;
-        } catch (error) {
-            return rejectWithValue({
-                message: getErrorMessage(error, 'Failed to fetch tags'),
-                type: classifyError(error),
-                retryable: isRetryable(error),
-            });
-        }
-    }
-);
-
 export const fetchPersonalNames = createAsyncThunk(
     'document/fetchPersonalNames',
     async (_, { rejectWithValue }) => {
