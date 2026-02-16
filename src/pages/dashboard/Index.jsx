@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { searchDocument } from '../../features/document/documentThunk';
+import { searchDocuments } from '../../features/document/documentThunk';
 import Card from '../../components/ui/Card';
 import { Users, File } from '../../components/ui/Icon';
 
@@ -26,7 +26,7 @@ const Dashboard = () => {
                 "value": ""
             }
         }
-        dispatch(searchDocument(data))
+        dispatch(searchDocuments(data))
     }, [dispatch])
    
     useEffect(() => {

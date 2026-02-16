@@ -18,7 +18,7 @@ const UserManagement = () => {
 
     // Load users from localStorage
     useEffect(() => {
-        const storedUsers = JSON.parse(localStorage.getItem('users')) || [];
+        const storedUsers = JSON.parse(localStorage.getItem('dummyUsers')) || [];
         setUsers(storedUsers);
     }, []);
 
@@ -69,7 +69,7 @@ const UserManagement = () => {
         };
 
         const updatedUsers = [newUser, ...users];
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
+        localStorage.setItem('dummyUsers', JSON.stringify(updatedUsers));
         setUsers(updatedUsers);
         toast.success('User added successfully!');
 
