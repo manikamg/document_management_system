@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { uploadDocument, searchDocument, fetchPersonalNames, fetchDepartments } from '../../features/document/documentThunk'
+import { uploadDocument, searchDocuments, fetchPersonalNames, fetchDepartments } from '../../features/document/documentThunk'
 
 // upld = upload doc
 // upld = upload doc
@@ -23,6 +23,8 @@ const initialState = {
     personalNames: ['John', 'Tom', 'Emily', 'Michael', 'Sarah', 'David', 'Lisa', 'James'],
     departments: ['Accounts', 'HR', 'IT', 'Finance', 'Marketing', 'Operations', 'Sales', 'Legal'],
     searchResults: [],
+
+    
 }
 
 const documentSlice = createSlice({
@@ -34,6 +36,13 @@ const documentSlice = createSlice({
                 state.upldSuccess = false,
                 state.upldError = false,
                 state.upldMessage = null
+        },
+        
+        clearSearchParams: (state) => {
+            state.searchParams = initialState.searchParams;
+        },
+        clearSearchResults: (state) => {
+            state.searchResults = [];
         },
         resetSearchState: (state) => {
             state.srchLoading = false,
@@ -76,10 +85,10 @@ const documentSlice = createSlice({
             })
 
             // Search document
-            .addCase(searchDocument.pending, (state) => {
+            .addCase(searchDocuments.pending, (state) => {
                 state.srchLoading = true
             })
-            .addCase(searchDocument.fulfilled, (state, action) => {
+            .addCase(searchDocuments.fulfilled, (state, action) => {
                 if (action.payload.status) {
                     state.srchLoading = false
                     state.srchSuccess = true
@@ -94,7 +103,7 @@ const documentSlice = createSlice({
                     state.srchMessage = null
                 }
             })
-            .addCase(searchDocument.rejected, (state, action) => {
+            .addCase(searchDocuments.rejected, (state, action) => {
                 state.srchLoading = false
                 state.srchError = true
                 state.srchMessage = action.payload
@@ -102,5 +111,5 @@ const documentSlice = createSlice({
     },
 })
 
-export const { resetUploadState, resetSearchState } = documentSlice.actions
+export const { resetUploadState, clearSearchParams, clearSearchResults, resetSearchState } = documentSlice.actions
 export default documentSlice.reducer
